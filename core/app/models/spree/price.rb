@@ -6,6 +6,7 @@ module Spree
     validate :check_price
     validates :amount, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
     validate :validate_amount_maximum
+    validates_presence_of :variant_id
 
     def display_amount
       money
@@ -32,8 +33,6 @@ module Spree
     private
 
     def check_price
-      raise "Price must belong to a variant" if variant.nil?
-
       if currency.nil?
         self.currency = Spree::Config[:currency]
       end
