@@ -357,4 +357,34 @@ describe Spree::Promotion do
       end
     end
   end
+
+  describe '#used_by?' do
+    subject { promotion.used_by? user }
+
+    let(:promotion) { Spree::Promotion.create! name: 'Test Used By' }
+    let(:user) { double Spree::LegacyUser, id: 2 }
+    let(:order) { create :completed_order_with_totals }
+
+    before { promotion.orders << order }
+
+    context 'when the user has used this promo' do
+      before do
+        order.user_id = user.id
+        order.save!
+      end
+
+      context 'when the order is complete' do
+        it { should be true }
+      end
+
+      context 'when the order is not complete' do
+        let(:order) { create :order }
+        it { should be false }
+      end
+    end
+
+    context 'when the user nas not used this promo' do
+      it { should be false }
+    end
+  end
 end

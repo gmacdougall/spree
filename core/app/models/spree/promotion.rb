@@ -118,6 +118,10 @@ module Spree
       credits.count
     end
 
+    def used_by?(user)
+      orders.complete.where(user_id: user.id).any?
+    end
+
     private
     def normalize_blank_values
       [:code, :path].each do |column|
