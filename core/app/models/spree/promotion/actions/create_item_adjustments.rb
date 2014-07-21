@@ -16,10 +16,9 @@ module Spree
           order = payload[:order]
           promotion = payload[:promotion]
 
-          already_adjusted_line_items = self.adjustments.pluck(:adjustable_id)
           result = false
 
-          promotion.line_items_to_adjust(order, already_adjusted_line_items).find_each do |line_item|
+          line_items_to_adjust(promotion, order).each do |line_item|
             current_result = self.create_adjustment(line_item, order)
             result ||= current_result
           end
@@ -29,7 +28,6 @@ module Spree
         def create_adjustment(adjustable, order)
           amount = self.compute_amount(adjustable)
           return if amount == 0
-          return if promotion.product_ids.present? and !promotion.product_ids.include?(adjustable.product.id)
           self.adjustments.create!(
             amount: amount,
             adjustable: adjustable,
@@ -61,6 +59,15 @@ module Spree
           def ensure_action_has_calculator
             return if self.calculator
             self.calculator = Calculator::PercentOnLineItem.new
+          end
+
+          def line_items_to_adjust(promotion, order)
+            excluded_ids = self.adjustments.pluck(:adjustable_id)
+            order.line_items.where.not(id: excluded_ids).reject do |line_item|
+              (promotion.eligible_rules(order) || []).any? do |rule|
+                !rule.actionable?(line_item)
+              end
+            end
           end
 
       end

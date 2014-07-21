@@ -48,10 +48,13 @@ module Spree
             end
 
             context "with products rules" do
-              before do
-                promotion.stub(:product_ids => [line_item.product.id])
-              end
               let!(:second_line_item) { create(:line_item, :order => order) }
+              let(:rule) { double Spree::Promotion::Rules::Product }
+
+              before do
+                promotion.stub(:eligible_rules) { [rule] }
+                rule.stub(:actionable?).and_return(true, false)
+              end
 
               it "does not create an adjustmenty for line_items not in product rule" do
                 action.perform(payload)
