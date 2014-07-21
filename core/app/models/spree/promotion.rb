@@ -49,6 +49,8 @@ module Spree
       order = payload[:order]
       return unless self.class.order_activatable?(order)
 
+      payload[:promotion] = self
+
       # Track results from actions to see if any action has been taken.
       # Actions should return nil/false if no action has been taken.
       # If an action returns true, then an action has been taken.
@@ -117,6 +119,10 @@ module Spree
 
     def credits_count
       credits.count
+    end
+
+    def line_items_to_adjust(order, excluded_ids = [])
+      order.line_items.where.not(id: excluded_ids)
     end
 
     private

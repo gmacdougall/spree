@@ -14,11 +14,12 @@ module Spree
 
         def perform(payload = {})
           order = payload[:order]
+          promotion = payload[:promotion]
 
           already_adjusted_line_items = self.adjustments.pluck(:adjustable_id)
           result = false
 
-          order.line_items.where.not(id: already_adjusted_line_items).find_each do |line_item|
+          promotion.line_items_to_adjust(order, already_adjusted_line_items).find_each do |line_item|
             current_result = self.create_adjustment(line_item, order)
             result ||= current_result
           end

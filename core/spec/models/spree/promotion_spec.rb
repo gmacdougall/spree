@@ -338,6 +338,19 @@ describe Spree::Promotion do
     end
   end
 
+  describe '#line_items_to_adjust' do
+    let!(:order) { create :order_with_line_items }
+
+    it 'returns all line items for the order' do
+      expect(promotion.line_items_to_adjust(order)).to eq order.line_items
+    end
+
+    it 'excludes line items with matching ids' do
+      # 5 line items are created by the factory
+      expect(promotion.line_items_to_adjust(order, [1, 2]).size).to eq 3
+    end
+  end
+
   # regression for #4059
   # admin form posts the code and path as empty string
   describe "normalize blank values for code & path" do
