@@ -71,23 +71,24 @@ module Spree
     # called anytime order.update! happens
     def eligible?(promotable)
       return false if expired? || usage_limit_exceeded?(promotable)
-      rules_are_eligible?(promotable, {})
+      !!eligible_rules(promotable, {})
     end
 
-    def rules_are_eligible?(promotable, options = {})
+    def eligible_rules(promotable, options = {})
       # Promotions without rules are eligible by default.
-      return true if rules.none?
+      return [] if rules.none?
       eligible = lambda { |r| r.eligible?(promotable, options) }
       specific_rules = rules.for(promotable)
-      return true if specific_rules.none?
+      return [] if specific_rules.none?
+
       if match_policy == 'all'
         # If there are rules for this promotion, but no rules for this
         # particular promotable, then the promotion is ineligible by default.
-        specific_rules.any? && specific_rules.all?(&eligible)
+        return nil unless specific_rules.all?(&eligible)
+        specific_rules
       else
-        # If there are no rules for this promotable, then this will return false.
-        # If there are rules for this promotable, but they are ineligible, this will return false.
-        specific_rules.any?(&eligible)
+        return nil unless specific_rules.any?(&eligible)
+        specific_rules.select(&eligible)
       end
     end
 

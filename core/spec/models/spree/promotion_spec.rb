@@ -285,16 +285,16 @@ describe Spree::Promotion do
     end
   end
 
-  context "#rules_are_eligible?" do
+  context "#eligible_rules" do
     let(:promotable) { double('Promotable') }
     it "true if there are no rules" do
-      promotion.rules_are_eligible?(promotable).should be_true
+      promotion.eligible_rules(promotable).should eq []
     end
 
     it "true if there are no applicable rules" do
       promotion.promotion_rules = [stub_model(Spree::PromotionRule, :eligible? => true, :applicable? => false)]
       promotion.promotion_rules.stub(:for).and_return([])
-      promotion.rules_are_eligible?(promotable).should be_true
+      promotion.eligible_rules(promotable).should eq []
     end
 
     context "with 'all' match policy" do
@@ -308,7 +308,7 @@ describe Spree::Promotion do
 
         promotion.promotion_rules = [promo1, promo2]
         promotion.promotion_rules.stub(:for).and_return(promotion.promotion_rules)
-        promotion.rules_are_eligible?(promotable).should be_true
+        promotion.eligible_rules(promotable).should eq [promo1, promo2]
       end
 
       it "should not have eligible rules if any of the rules is not eligible" do
@@ -319,7 +319,7 @@ describe Spree::Promotion do
 
         promotion.promotion_rules = [promo1, promo2]
         promotion.promotion_rules.stub(:for).and_return(promotion.promotion_rules)
-        promotion.rules_are_eligible?(promotable).should be_false
+        promotion.eligible_rules(promotable).should be_nil
       end
     end
 
@@ -333,7 +333,7 @@ describe Spree::Promotion do
         true_rule.stub(:eligible? => true)
         promotion.stub(:rules => [true_rule])
         promotion.stub_chain(:rules, :for).and_return([true_rule])
-        promotion.rules_are_eligible?(promotable).should be_true
+        promotion.eligible_rules(promotable).should eq [true_rule]
       end
     end
   end
