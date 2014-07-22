@@ -63,10 +63,8 @@ module Spree
 
           def line_items_to_adjust(promotion, order)
             excluded_ids = self.adjustments.pluck(:adjustable_id)
-            order.line_items.where.not(id: excluded_ids).reject do |line_item|
-              (promotion.eligible_rules(order) || []).any? do |rule|
-                !rule.actionable?(line_item)
-              end
+            order.line_items.where.not(id: excluded_ids).select do |line_item|
+              promotion.line_item_actionable? order, line_item
             end
           end
 

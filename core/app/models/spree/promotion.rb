@@ -83,7 +83,7 @@ module Spree
       specific_rules = rules.for(promotable)
       return [] if specific_rules.none?
 
-      if match_policy == 'all'
+      if match_all?
         # If there are rules for this promotion, but no rules for this
         # particular promotable, then the promotion is ineligible by default.
         return nil unless specific_rules.all?(&eligible)
@@ -121,11 +121,26 @@ module Spree
       credits.count
     end
 
+    def line_item_actionable?(order, line_item)
+      rules = eligible_rules(order)
+      if rules.blank?
+        eligible? order
+      else
+        rules.send(match_all? ? :all? : :any?) do |rule|
+          rule.actionable? line_item
+        end
+      end
+    end
+
     private
     def normalize_blank_values
       [:code, :path].each do |column|
         self[column] = nil if self[column].blank?
       end
+    end
+
+    def match_all?
+      match_policy == 'all'
     end
   end
 end
