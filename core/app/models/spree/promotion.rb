@@ -94,17 +94,6 @@ module Spree
       end
     end
 
-    # Products assigned to all product rules
-    def products
-      @products ||= self.rules.to_a.inject([]) do |products, rule|
-        rule.respond_to?(:products) ? products << rule.products : products
-      end.flatten.uniq
-    end
-
-    def product_ids
-      products.map(&:id)
-    end
-
     def usage_limit_exceeded?(promotable)
       usage_limit.present? && usage_limit > 0 && adjusted_credits_count(promotable) >= usage_limit
     end

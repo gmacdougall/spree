@@ -237,34 +237,6 @@ describe Spree::Promotion do
     end
   end
 
-  context "#products" do
-    let(:promotion) { create(:promotion) }
-
-    context "when it has product rules with products associated" do
-      let(:promotion_rule) { Spree::Promotion::Rules::Product.new }
-
-      before do
-        promotion_rule.promotion = promotion
-        promotion_rule.products << create(:product)
-        promotion_rule.save
-      end
-
-      it "should have products" do
-        promotion.reload.products.size.should == 1
-      end
-    end
-
-    context "when there's no product rule associated" do
-      before(:each) do
-        promotion.stub_chain(:rules, :to_a).and_return([mock_model(Spree::Promotion::Rules::User)])
-      end
-
-      it "should not have products but still return an empty array" do
-        promotion.products.should be_blank
-      end
-    end
-  end
-
   context "#eligible?" do
     before do
       @order = create(:order)
