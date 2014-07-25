@@ -421,4 +421,24 @@ describe Spree::Promotion do
       it { should be false }
     end
   end
+
+  describe 'adding items to the cart' do
+    # FIXME - Make this test less awful.
+    it 'updates the promotions for new line items' do
+      order = create :order
+      line_item_1 = create :line_item, order: order
+
+      promo = Spree::Promotion.create! name: 'line_item_promo'
+      promo.actions << Spree::Promotion::Actions::CreateItemAdjustments.new(calculator: Spree::Calculator::FlatRate.new(preferred_amount: 5))
+
+      promo.activate(order: order)
+
+      expect(line_item_1.adjustments.count).to eq(1)
+
+      line_item_2 = create :line_item, order: order
+      order.reload
+      Spree::OrderUpdater.new(order).update
+      expect(line_item_2.adjustments.count).to eq(1)
+    end
+  end
 end
