@@ -17,7 +17,7 @@ FactoryGirl.define do
       ship_address
 
       ignore do
-        line_items_count 5
+        line_items_count 1
       end
 
       after(:create) do |order, evaluator|
