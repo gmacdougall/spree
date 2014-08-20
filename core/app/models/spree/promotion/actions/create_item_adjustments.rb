@@ -14,12 +14,11 @@ module Spree
 
         def perform(payload = {})
           order = payload[:order]
-          # Find only the line items which have not already been adjusted by this promotion
-          # HACK: Need to use [0] because `pluck` may return an empty array, which AR helpfully
-          # coverts to meaning NOT IN (NULL) and the DB isn't happy about that.
-          already_adjusted_line_items = [0] + self.adjustments.pluck(:adjustable_id)
+          promotion = payload[:promotion]
+
           result = false
-          order.line_items.where("id NOT IN (?)", already_adjusted_line_items).find_each do |line_item|
+
+          line_items_to_adjust(promotion, order).each do |line_item|
             current_result = self.create_adjustment(line_item, order)
             result ||= current_result
           end
@@ -29,7 +28,6 @@ module Spree
         def create_adjustment(adjustable, order)
           amount = self.compute_amount(adjustable)
           return if amount == 0
-          return if promotion.product_ids.present? and !promotion.product_ids.include?(adjustable.product.id)
           self.adjustments.create!(
             amount: amount,
             adjustable: adjustable,
@@ -42,6 +40,7 @@ module Spree
         # Ensure a negative amount which does not exceed the sum of the order's
         # item_total and ship_total
         def compute_amount(adjustable)
+          return 0 unless promotion.line_item_actionable? adjustable.order, adjustable
           promotion_amount = self.calculator.compute(adjustable).to_f.abs
           
           [adjustable.amount, promotion_amount].min * -1
@@ -61,6 +60,13 @@ module Spree
           def ensure_action_has_calculator
             return if self.calculator
             self.calculator = Calculator::PercentOnLineItem.new
+          end
+
+          def line_items_to_adjust(promotion, order)
+            excluded_ids = self.adjustments.pluck(:adjustable_id)
+            order.line_items.where.not(id: excluded_ids).select do |line_item|
+              promotion.line_item_actionable? order, line_item
+            end
           end
 
       end
