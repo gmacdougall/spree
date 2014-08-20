@@ -88,8 +88,8 @@ module Spree
       let(:order) { Order.new }
       let(:updater) { order.updater }
 
-      it "is failed if last payment failed" do
-        order.stub_chain(:payments, :last, :state).and_return('failed')
+      it "is failed if no valid payments" do
+        order.stub_chain(:payments, :valid, :size).and_return(0)
 
         updater.update_payment_state
         order.payment_state.should == 'failed'
