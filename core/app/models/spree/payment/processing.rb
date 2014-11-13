@@ -1,6 +1,12 @@
 module Spree
   class Payment < Spree::Base
     module Processing
+      extend ActiveSupport::Concern
+      included do
+        class_attribute :gateway_options_class
+        self.gateway_options_class = Spree::Payment::GatewayOptions
+      end
+
       def process!
         if payment_method && payment_method.source_required?
           if source
@@ -127,26 +133,7 @@ module Spree
 
       def gateway_options
         order.reload
-        options = { :email       => order.email,
-                    :customer    => order.email,
-                    :customer_id => order.user_id,
-                    :ip          => order.last_ip_address,
-                    # Need to pass in a unique identifier here to make some
-                    # payment gateways happy.
-                    #
-                    # For more information, please see Spree::Payment#set_unique_identifier
-                    :order_id    => gateway_order_id }
-
-        options.merge!({ :shipping => order.ship_total * 100,
-                         :tax      => order.additional_tax_total * 100,
-                         :subtotal => order.item_total * 100,
-                         :discount => order.promo_total * 100,
-                         :currency => currency })
-
-        options.merge!({ :billing_address  => order.bill_address.try(:active_merchant_hash),
-                        :shipping_address => order.ship_address.try(:active_merchant_hash) })
-
-        options
+        gateway_options_class.new(self).to_hash
       end
 
       private
@@ -213,11 +200,6 @@ module Spree
         return if payment_method.environment == Rails.env
         message = Spree.t(:gateway_config_unavailable) + " - #{Rails.env}"
         raise Core::GatewayError.new(message)
-      end
-
-      # The unique identifier to be passed in to the payment gateway
-      def gateway_order_id
-        "#{order.number}-#{self.identifier}"
       end
 
       def token_based?
