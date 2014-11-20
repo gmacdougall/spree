@@ -37,7 +37,6 @@ module Spree
     preference :binary_inventory_cache, :boolean, default: false # only invalidate product cache when a stock item changes whether it is in_stock
     preference :check_for_spree_alerts, :boolean, default: true
     preference :checkout_zone, :string, default: nil # replace with the name of a zone if you would like to limit the countries
-    preference :class_gateway_options, :string, default: 'Spree::Payment::GatewayOptions' # The class used to generate the hash passed to the payment gateway
     preference :company, :boolean, default: false # Request company field for billing and shipping addr
     preference :currency, :string, default: "USD"
     preference :currency_decimal_mark, :string, default: "."
