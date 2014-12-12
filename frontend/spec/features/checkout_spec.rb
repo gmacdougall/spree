@@ -164,7 +164,7 @@ describe "Checkout", inaccessible: true do
     end
 
     it "prevents double clicking the confirm button on checkout", :js => true do
-      order.payments << create(:payment, amount: order.amount)
+      order.payments << create(:payment)
       visit spree.checkout_state_path(:confirm)
 
       # prevent form submit to verify button is disabled
