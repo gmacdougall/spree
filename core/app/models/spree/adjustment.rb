@@ -24,7 +24,7 @@ module Spree
   class Adjustment < Spree::Base
     belongs_to :adjustable, polymorphic: true, touch: true
     belongs_to :source, polymorphic: true
-    belongs_to :order, class_name: "Spree::Order"
+    belongs_to :order, class_name: 'Spree::Order', inverse_of: :adjustments
 
     validates :adjustable, presence: true
     validates :order, presence: true
@@ -66,6 +66,22 @@ module Spree
     extend DisplayMoney
     money_methods :amount
 
+    alias_attribute :adjustment_total, :amount
+
+    # Hack to do fast lookups on the loaded order object
+    # This is needed because inverse_of doesn't work with polymorphic assoc.
+    def adjustable
+      if adjustable_type == 'Spree::Order' && adjustable_id = order.id
+        result = order
+      elsif adjustable_type == 'Spree::Shipment'
+        result = order.shipments.detect { |s| s.id = adjustable_id }
+      elsif adjustable_type == 'Spree::LineItem'
+        result = order.line_items.detect { |li| li.id = adjustable_id }
+      end
+
+      result || super
+    end
+
     def closed?
       state == "closed"
     end
@@ -75,7 +91,11 @@ module Spree
     end
 
     def promotion?
-      source.class < Spree::PromotionAction
+      source_type == 'Spree::PromotionAction'
+    end
+
+    def tax?
+      source_type == 'Spree::TaxRate'
     end
 
     # Recalculate amount given a target e.g. Order, Shipment, LineItem
@@ -91,16 +111,17 @@ module Spree
     def update!(target = nil)
       return amount if closed?
       if source.present?
-        amount = source.compute_amount(target || adjustable)
-        self.update_columns(
-          amount: amount,
-          updated_at: Time.now,
-        )
+        self.amount = source.compute_amount(target || adjustable)
         if promotion?
-          self.update_column(:eligible, source.promotion.eligible?(adjustable))
+          self.eligible = source.promotion.eligible?(adjustable)
         end
+        self.save! if changed?
       end
       amount
+    end
+
+    def promo_total
+      (eligible? && promotion?) ? amount : 0
     end
 
     private

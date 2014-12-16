@@ -101,7 +101,7 @@ module Spree
 
         # ensure associated state belongs to country
         if state.present?
-          if state.country == country
+          if state.country_id == country_id
             self.state_name = nil #not required as we have a valid state and country combo
           else
             if state_name.present?

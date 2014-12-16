@@ -30,7 +30,8 @@ module Spree
     end
 
     def recalculate_adjustments
-      all_adjustments.includes(:adjustable).map(&:adjustable).uniq.each do |adjustable|
+      # FIXME: Used to use all_adjustments, not sure if needed
+      adjustments.map(&:adjustable).uniq.each do |adjustable|
         Adjustable::AdjustmentsUpdater.update(adjustable)
       end
     end
@@ -61,11 +62,11 @@ module Spree
     end
 
     def update_payment_total
-      order.payment_total = payments.completed.sum(:amount)
+      order.payment_total = payments.map(&:amount).sum
     end
 
     def update_shipment_total
-      order.shipment_total = shipments.sum(:cost)
+      order.shipment_total = shipments.map(&:cost).sum
       update_order_total
     end
 
@@ -75,15 +76,22 @@ module Spree
 
     def update_adjustment_total
       recalculate_adjustments
-      order.adjustment_total = line_items.sum(:adjustment_total) +
-                               shipments.sum(:adjustment_total)  +
-                               adjustments.eligible.sum(:amount)
-      order.included_tax_total = line_items.sum(:included_tax_total) + shipments.sum(:included_tax_total)
-      order.additional_tax_total = line_items.sum(:additional_tax_total) + shipments.sum(:additional_tax_total)
 
-      order.promo_total = line_items.sum(:promo_total) +
-                          shipments.sum(:promo_total) +
-                          adjustments.promotion.eligible.sum(:amount)
+      order.adjustment_total = (
+        line_items + shipments + adjustments
+      ).map(&:adjustment_total).sum
+
+      order.included_tax_total = (
+        line_items + shipments
+      ).map(&:included_tax_total).sum
+
+      order.additional_tax_total = (
+        line_items + shipments
+      ).map(&:additional_tax_total).sum
+
+      order.promo_total = (
+        line_items + shipments + adjustments
+      ).map(&:promo_total).sum
 
       update_order_total
     end
@@ -93,25 +101,12 @@ module Spree
     end
 
     def update_item_total
-      order.item_total = line_items.sum('price * quantity')
+      order.item_total = line_items.map { |li| li.price * li.quantity }.sum
       update_order_total
     end
 
     def persist_totals
-      order.update_columns(
-        payment_state: order.payment_state,
-        shipment_state: order.shipment_state,
-        item_total: order.item_total,
-        item_count: order.item_count,
-        adjustment_total: order.adjustment_total,
-        included_tax_total: order.included_tax_total,
-        additional_tax_total: order.additional_tax_total,
-        payment_total: order.payment_total,
-        shipment_total: order.shipment_total,
-        promo_total: order.promo_total,
-        total: order.total,
-        updated_at: Time.now,
-      )
+      order.save! if order.changed?
     end
 
     # Updates the +shipment_state+ attribute according to the following logic:
@@ -129,13 +124,12 @@ module Spree
         order.shipment_state = 'backorder'
       else
         # get all the shipment states for this order
-        shipment_states = shipments.states
-        if shipment_states.size > 1
+        if order.shipment_states.size > 1
           # multiple shiment states means it's most likely partially shipped
           order.shipment_state = 'partial'
         else
           # will return nil if no shipments are found
-          order.shipment_state = shipment_states.first
+          order.shipment_state = order.shipment_states.first
           # TODO inventory unit states?
           # if order.shipment_state && order.inventory_units.where(:shipment_id => nil).exists?
           #   shipments exist but there are unassigned inventory units
@@ -158,7 +152,7 @@ module Spree
     # The +payment_state+ value helps with reporting, etc. since it provides a quick and easy way to locate Orders needing attention.
     def update_payment_state
       last_state = order.payment_state
-      if payments.present? && payments.valid.size == 0
+      if payments.present? && payments.none?(&:valid?)
         order.payment_state = 'failed'
       elsif !payments.present? && order.state == 'canceled'
         order.payment_state = 'void'

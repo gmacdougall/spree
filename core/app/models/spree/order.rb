@@ -56,7 +56,7 @@ module Spree
     has_many :payments, dependent: :destroy
     has_many :return_authorizations, dependent: :destroy, inverse_of: :order
     has_many :reimbursements, inverse_of: :order
-    has_many :adjustments, -> { order("#{Adjustment.table_name}.created_at ASC") }, as: :adjustable, dependent: :destroy
+    has_many :adjustments, -> { order("#{Adjustment.table_name}.created_at ASC") }, as: :adjustable, dependent: :destroy, inverse_of: :order
     has_many :line_item_adjustments, through: :line_items, source: :adjustments
     has_many :shipment_adjustments, through: :shipments, source: :adjustments
     has_many :inventory_units, inverse_of: :order
@@ -66,11 +66,7 @@ module Spree
 
     has_and_belongs_to_many :promotions, join_table: 'spree_orders_promotions'
 
-    has_many :shipments, dependent: :destroy, inverse_of: :order do
-      def states
-        pluck(:state).uniq
-      end
-    end
+    has_many :shipments, dependent: :destroy, inverse_of: :order
 
     accepts_nested_attributes_for :line_items
     accepts_nested_attributes_for :bill_address
@@ -143,8 +139,8 @@ module Spree
     end
 
     def all_adjustments
-      Adjustment.where("order_id = :order_id OR (adjustable_id = :order_id AND adjustable_type = 'Spree::Order')",
-                       order_id: self.id)
+      # FIXME: Test
+      adjustments + line_item_adjustments + shipment_adjustments
     end
 
     # For compatiblity with Calculator::PriceSack
@@ -626,6 +622,10 @@ module Spree
     def has_non_reimbursement_related_refunds?
       refunds.non_reimbursement.exists? ||
         payments.offset_payment.exists? # how old versions of spree stored refunds
+    end
+
+    def shipment_states
+      shipments.map(&:state).uniq
     end
 
     private

@@ -167,6 +167,10 @@ module Spree
       amount - capture_events.sum(:amount)
     end
 
+    def valid?
+      state != 'failed' && state != 'invalid'
+    end
+
     private
 
       def validate_source

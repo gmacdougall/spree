@@ -12,7 +12,7 @@ module Spree
     def compute_order(order)
 
       matched_line_items = order.line_items.select do |line_item|
-        line_item.tax_category == rate.tax_category
+        line_item.tax_category_id == rate.tax_category_id
       end
 
       line_items_total = matched_line_items.sum(&:total)

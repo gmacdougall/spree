@@ -14,7 +14,10 @@ module Spree
         return unless persisted?
         update_promo_adjustments
         update_tax_adjustments
-        persist_totals
+        # FIXME: This used to persist all totals early, but they were wrong...
+        # The would then get updated later in the request to be correct
+        # This is likely incorrect on many levels
+        persist_totals unless adjustable.is_a?(Spree::Order)
       end
 
       private
@@ -23,26 +26,26 @@ module Spree
       delegate :adjustments, :persisted?, to: :adjustable
 
       def update_promo_adjustments
-        promo_adjustments = adjustments.promotion.reload.map { |a| a.update!(adjustable) }
+        # FIXME: Still slow
+        promo_adjustments = promotion_adjustments.map { |a| a.update!(adjustable) }
         promotion_total = promo_adjustments.compact.sum
         choose_best_promotion_adjustment unless promotion_total == 0
         @promo_total = best_promotion_adjustment.try(:amount).to_f
       end
 
       def update_tax_adjustments
-        tax = (adjustable.try(:all_adjustments) || adjustable.adjustments).tax
-        @included_tax_total = tax.included.reload.map(&:update!).compact.sum
-        @additional_tax_total = tax.additional.reload.map(&:update!).compact.sum
+        # FIXME: Used to use all_adjustments
+        tax = adjustable.adjustments.select(&:tax?)
+        @included_tax_total = tax.select(&:included?).map(&:update!).compact.sum
+        @additional_tax_total = tax.reject(&:included).map(&:update!).compact.sum
       end
 
       def persist_totals
-        adjustable.update_columns(
-          promo_total: @promo_total,
-          included_tax_total: @included_tax_total,
-          additional_tax_total: @additional_tax_total,
-          adjustment_total: @promo_total + @additional_tax_total,
-          updated_at: Time.now
-        )
+        adjustable.promo_total = @promo_total
+        adjustable.included_tax_total = @included_tax_total
+        adjustable.additional_tax_total = @additional_tax_total
+        adjustable.adjustment_total = @promo_total + @additional_tax_total
+        adjustable.save! if adjustable.changed?
       end
 
       def shipment?
@@ -54,15 +57,20 @@ module Spree
       # have the same amount, then it will pick the latest one.
       def choose_best_promotion_adjustment
         if best_promotion_adjustment
-          other_promotions = adjustments.promotion.where.not(id: best_promotion_adjustment.id)
-          other_promotions.update_all(eligible: false)
+          other_promotions = promotion_adjustments.reject { |a| a.id == best_promotion_adjustment.id }
+          other_promotions.each do |promo|
+            promo.eligible = false
+          end
         end
       end
 
       def best_promotion_adjustment
-        @best_promotion_adjustment ||= begin
-          adjustments.promotion.eligible.reorder("amount ASC, created_at DESC, id DESC").first
-        end
+        # FIXME: add created_at, id tiebreaker
+        @best_promotion_adjustment ||= adjustments.max_by { |x| x.amount }
+      end
+
+      def promotion_adjustments
+        adjustments.select(&:promotion?)
       end
     end
   end

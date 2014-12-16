@@ -8,7 +8,7 @@ module Spree
 
     has_many :adjustments, as: :adjustable, dependent: :delete_all
     has_many :inventory_units, dependent: :delete_all, inverse_of: :shipment
-    has_many :shipping_rates, -> { order('cost ASC') }, dependent: :delete_all
+    has_many :shipping_rates, -> { order('cost ASC') }, dependent: :delete_all, inverse_of: :shipment
     has_many :shipping_methods, through: :shipping_rates
     has_many :state_changes, as: :stateful
 
@@ -215,7 +215,17 @@ module Spree
       # StockEstimator.new assigment below will replace the current shipping_method
       original_shipping_method_id = shipping_method.try(:id)
 
-      self.shipping_rates = Stock::Estimator.new(order).shipping_rates(to_package)
+      proposed_rates = Stock::Estimator.new(order).shipping_rates(to_package)
+      proposed_rate_map = Hash[
+        proposed_rates.map { |r| [r.shipping_method_id, [r.selected, r.cost]] }
+      ]
+      current_rate_map = Hash[
+        shipping_rates.map { |r| [r.shipping_method_id, [r.selected, r.cost]] }
+      ]
+      if proposed_rate_map != current_rate_map
+        # FIXME: This should only update the appropriate rates
+        self.shipping_rates = Stock::Estimator.new(order).shipping_rates(to_package)
+      end
 
       if shipping_method
         selected_rate = shipping_rates.detect { |rate|
@@ -228,7 +238,7 @@ module Spree
     end
 
     def selected_shipping_rate
-      shipping_rates.where(selected: true).first
+      shipping_rates.detect(&:selected?)
     end
 
     def selected_shipping_rate_id
@@ -236,9 +246,10 @@ module Spree
     end
 
     def selected_shipping_rate_id=(id)
-      shipping_rates.update_all(selected: false)
-      shipping_rates.update(id, selected: true)
-      self.save!
+      shipping_rates.each do |rate|
+        rate.selected = (rate.id == id)
+      end
+      self.save! if changed?
     end
 
     def set_up_inventory(state, variant, order, line_item)
@@ -288,11 +299,9 @@ module Spree
 
     def update_amounts
       if selected_shipping_rate
-        self.update_columns(
-          cost: selected_shipping_rate.cost,
-          adjustment_total: adjustments.additional.map(&:update!).compact.sum,
-          updated_at: Time.now,
-        )
+        self.cost = selected_shipping_rate.cost
+        self.adjustment_total = adjustments.reject(&:included?).map(&:update!).compact.sum
+        save! if changed?
       end
     end
 
@@ -332,10 +341,8 @@ module Spree
     def update!(order)
       old_state = state
       new_state = determine_state(order)
-      update_columns(
-        state: new_state,
-        updated_at: Time.now,
-      )
+      self.state = new_state
+      self.save! if changed?
       after_ship if new_state == 'shipped' and old_state != 'shipped'
     end
 
