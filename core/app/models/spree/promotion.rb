@@ -129,7 +129,15 @@ module Spree
     end
 
     def used_by?(user, excluded_orders = [])
-      orders.where.not(id: excluded_orders.map(&:id)).complete.where(user_id: user.id).exists?
+      user.orders.complete
+        .joins(:adjustments)
+        .where(spree_adjustments: {
+          source_type: 'Spree::PromotionAction',
+          source_id: id,
+          eligible: true
+        })
+        .where.not(id: excluded_orders.map(&:id))
+        .any?
     end
 
     private
