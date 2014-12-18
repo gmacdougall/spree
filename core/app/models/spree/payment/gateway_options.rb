@@ -54,7 +54,20 @@ module Spree
       end
 
       def hash_methods
-        [:email, :customer, :customer_id, :ip, :order_id, :shipping, :tax, :subtotal, :discount, :currency, :billing_address, :shipping_address]
+        [
+          :email,
+          :customer,
+          :customer_id,
+          :ip,
+          :order_id,
+          :shipping,
+          :tax,
+          :subtotal,
+          :discount,
+          :currency,
+          :billing_address,
+          :shipping_address
+        ]
       end
 
       def to_hash
@@ -64,6 +77,7 @@ module Spree
       end
 
       private
+
       def order
         @payment.order
       end

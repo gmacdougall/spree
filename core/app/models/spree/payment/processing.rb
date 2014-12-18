@@ -1,6 +1,12 @@
 module Spree
   class Payment < Spree::Base
     module Processing
+      extend ActiveSupport::Concern
+      included do
+        class_attribute :gateway_options_class
+        self.gateway_options_class = Spree::Payment::GatewayOptions
+      end
+
       def process!
         if payment_method && payment_method.source_required?
           if source
@@ -127,7 +133,7 @@ module Spree
 
       def gateway_options
         order.reload
-        Spree::Config[:class_gateway_options].constantize.new(self).to_hash
+        gateway_options_class.new(self).to_hash
       end
 
       private
