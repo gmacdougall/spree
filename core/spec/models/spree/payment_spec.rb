@@ -585,6 +585,21 @@ describe Spree::Payment do
       end
     end
 
+    context 'when the payment was completed but now void' do
+      let(:payment) do
+        Spree::Payment.create(
+          amount: 100,
+          order: order,
+          state: 'completed'
+        )
+      end
+
+      it 'updates order payment total' do
+        payment.void
+        expect(order.payment_total).to eq 0
+      end
+    end
+
     context "completed orders" do
       before { order.stub completed?: true }
 

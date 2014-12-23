@@ -188,7 +188,7 @@ module Spree
       end
 
       def update_order
-        if self.completed?
+        if completed? || void?
           order.updater.update_payment_total
         end
 
