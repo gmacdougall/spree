@@ -41,15 +41,7 @@ module Spree
     scope :risky, -> { where("avs_response IN (?) OR (cvv_response_code IS NOT NULL and cvv_response_code != 'M') OR state = 'failed'", RISKY_AVS_CODES) }
     scope :valid, -> { where.not(state: %w(failed invalid)) }
 
-    after_rollback :persist_invalid
-
     validates :amount, numericality: true
-
-    def persist_invalid
-      return unless ['failed', 'invalid'].include?(state)
-      state_will_change!
-      save
-    end
 
     # order state machine (see http://github.com/pluginaweek/state_machine/tree/master for details)
     state_machine initial: :checkout do
