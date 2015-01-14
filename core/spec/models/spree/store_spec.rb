@@ -2,6 +2,8 @@ require 'spec_helper'
 
 describe Spree::Store do
 
+  before { Spree::Store.delete_all }
+
   describe ".by_url" do 
     let!(:store)    { create(:store, url: "website1.com\nwww.subdomain.com") }
     let!(:store_2)  { create(:store, url: 'freethewhales.com') }
