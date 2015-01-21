@@ -3,6 +3,8 @@ require 'spec_helper'
 describe Spree::PaymentMethod do
   describe "#available" do
     before do
+      # FIXME: Leaky database fixed in 3.0
+      Spree::PaymentMethod.destroy_all
       [nil, 'both', 'front_end', 'back_end'].each do |display_on|
         Spree::Gateway::Test.create(
           :name => 'Display Both',

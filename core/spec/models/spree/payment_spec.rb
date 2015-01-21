@@ -167,6 +167,8 @@ describe Spree::Payment do
       end
 
       it "should log the response" do
+        # payment needs to be persisted
+        payment.save!
         payment.log_entries.should_receive(:create!).with(:details => anything)
         payment.authorize!
       end
@@ -218,6 +220,8 @@ describe Spree::Payment do
       end
 
       it "should log the response" do
+        # payment needs to be persisted
+        payment.save!
         payment.log_entries.should_receive(:create!).with(:details => anything)
         payment.purchase!
       end
