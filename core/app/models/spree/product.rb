@@ -207,7 +207,7 @@ module Spree
       if any_variants_not_track_inventory?
         Float::INFINITY
       else
-        stock_items.sum(:count_on_hand)
+        master.total_on_hand + variants.map(&:total_on_hand).sum
       end
     end
 
@@ -233,6 +233,8 @@ module Spree
     def any_variants_not_track_inventory?
       if variants_including_master.loaded?
         variants_including_master.any? { |v| !v.should_track_inventory? }
+      elsif variants.loaded?
+        variants.any? { |v| !v.should_track_inventory? } || !master.should_track_inventory?
       else
         !Spree::Config.track_inventory_levels || variants_including_master.where(track_inventory: false).any?
       end

@@ -8,6 +8,11 @@ module Spree
         else
           @products = product_scope.ransack(params[:q]).result
         end
+        [:master, :variants].each do |variant_type|
+          @products = @products.includes(
+            variant_type => {stock_items: :stock_location}
+          )
+        end
 
         @products = @products.distinct.page(params[:page]).per(params[:per_page])
         expires_in 15.minutes, :public => true
