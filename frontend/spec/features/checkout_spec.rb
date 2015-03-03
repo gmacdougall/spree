@@ -381,7 +381,7 @@ describe "Checkout", type: :feature, inaccessible: true, js: true do
       click_on "Save and Continue"
 
       expect(page).to have_content(promotion.name)
-      expect(Spree::Payment.first.amount.to_f).to eq Spree::Order.last.total.to_f
+      expect(Spree::Payment.first.amount).to eq Spree::Order.last.total
     end
 
     context "invalid coupon" do

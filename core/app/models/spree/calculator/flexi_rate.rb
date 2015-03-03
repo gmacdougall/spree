@@ -16,14 +16,14 @@ module Spree
     end
 
     def compute(object)
-      sum = 0
+      sum = BigDecimal.new(0)
       max = self.preferred_max_items.to_i
       items_count = object.quantity
       items_count.times do |i|
         if i == 0
-          sum += self.preferred_first_item.to_f
+          sum += self.preferred_first_item.to_d
         elsif ((max > 0) && (i <= (max - 1))) || (max == 0)
-          sum += self.preferred_additional_item.to_f
+          sum += self.preferred_additional_item.to_d
         end
       end
 

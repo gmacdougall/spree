@@ -352,7 +352,7 @@ describe "Products", type: :feature do
         check "Show Deleted"
         click_on 'Search'
         click_link product.name
-        expect(find("#product_price").value.to_f).to eq(product.price.to_f)
+        expect(find("#product_price").value).to eq(product.price.to_s)
       end
     end
   end

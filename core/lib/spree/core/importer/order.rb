@@ -37,7 +37,9 @@ module Spree
             order.updater.update
             if shipments_attrs.present?
               order.shipments.each_with_index do |shipment, index|
-                shipment.update_columns(cost: shipments_attrs[index][:cost].to_f) if shipments_attrs[index][:cost].present?
+                shipment.update_columns(
+                  cost: BigDecimal(shipments_attrs[index][:cost].to_s)
+                ) if shipments_attrs[index][:cost].present?
               end
             end
             order.reload
@@ -172,7 +174,7 @@ module Spree
             begin
               adjustment = order.adjustments.build(
                 order:  order,
-                amount: a[:amount].to_f,
+                amount: BigDecimal(a[:amount].to_s),
                 label:  a[:label]
               )
               adjustment.save!
@@ -188,7 +190,7 @@ module Spree
           payments_hash.each do |p|
             begin
               payment = order.payments.build order: order
-              payment.amount = p[:amount].to_f
+              payment.amount = BigDecimal(p[:amount].to_s)
               # Order API should be using state as that's the normal payment field.
               # spree_wombat serializes payment state as status so imported orders should fall back to status field.
               payment.state = p[:state] || p[:status] || 'completed'

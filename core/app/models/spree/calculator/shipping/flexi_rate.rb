@@ -22,9 +22,9 @@ module Spree
         quantity.times do |i|
           # check max value to avoid divide by 0 errors
           if (max == 0 && i == 0) || (max > 0) && (i % max == 0)
-            sum += self.preferred_first_item.to_f
+            sum += BigDecimal(self.preferred_first_item.to_s)
           else
-            sum += self.preferred_additional_item.to_f
+            sum += BigDecimal(self.preferred_additional_item.to_s)
           end
         end
 

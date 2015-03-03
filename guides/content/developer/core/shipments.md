@@ -314,7 +314,7 @@ class Calculator::ActiveShipping < Calculator
     # raise rates.inspect
 
     return nil unless rates
-    rate = rates[self.description].to_f + (Spree::ActiveShipping::Config[:handling_fee].to_f || 0.0)
+    rate = rates[self.description].to_s + (Spree::ActiveShipping::Config[:handling_fee].to_s || 0.0)
     return nil unless rate
     # divide by 100 since active_shipping rates are expressed as cents
 
@@ -355,7 +355,7 @@ As you can see in the code above, the `spree_active_shipping` gem returns an arr
 From all of the viable shipping services in this hash, the `compute` method selects the one that matches the description of the calculator. At this point, an optional flat handling fee (set via preferences) can be added:
 
 ```ruby
-rate = rates[self.description].to_f + (Spree::ActiveShipping::Config[:handling_fee].to_f || 0.0)
+rate = rates[self.description].to_s + (Spree::ActiveShipping::Config[:handling_fee].to_s || 0.0)
 ```
 
 Finally, don't forget to register the calculator you added. In extensions, this is accomplished with the `activate` method:

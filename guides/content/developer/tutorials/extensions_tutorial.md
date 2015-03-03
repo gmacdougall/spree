@@ -267,7 +267,7 @@ describe Spree::Variant do
       result = variant.price_in("USD")
 
       result.variant_id.should == expected.variant_id
-      result.amount.to_f.should == expected.amount.to_f
+      result.amount.should == expected.amount
       result.currency.should == expected.currency
     end
 
@@ -278,7 +278,7 @@ describe Spree::Variant do
       result = variant.price_in("USD")
 
       result.variant_id.should == expected.variant_id
-      result.amount.to_f.should == expected.amount.to_f
+      result.amount.should == expected.amount
       result.currency.should == expected.currency
     end
   end

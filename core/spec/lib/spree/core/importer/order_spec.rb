@@ -293,13 +293,13 @@ module Spree
           order = Importer::Order.import(user, params)
           shipment = order.shipments.first
 
-          expect(shipment.cost.to_f).to eq 14.99
+          expect(shipment.cost.to_d).to eq 14.99
           expect(shipment.inventory_units.first.variant_id).to eq product.master.id
           expect(shipment.tracking).to eq '123456789'
           expect(shipment.shipping_rates.first.cost).to eq 14.99
           expect(shipment.selected_shipping_rate).to eq(shipment.shipping_rates.first)
           expect(shipment.stock_location).to eq stock_location
-          expect(order.shipment_total.to_f).to eq 14.99
+          expect(order.shipment_total.to_d).to eq 14.99
         end
 
         it "accepts admin name for stock location" do
@@ -337,7 +337,7 @@ module Spree
             order = Importer::Order.import(user, params)
             shipment = order.shipments.first
 
-            expect(shipment.cost.to_f).to eq 4.99
+            expect(shipment.cost.to_d).to eq 4.99
             expect(shipment.inventory_units.first.variant_id).to eq product.master.id
             expect(shipment.tracking).to eq '123456789'
             expect(shipment.shipped_at).to be_present
@@ -347,7 +347,7 @@ module Spree
             expect(shipment.state).to eq('shipped')
             expect(shipment.inventory_units.all?(&:shipped?)).to be true
             expect(order.shipment_state).to eq('shipped')
-            expect(order.shipment_total.to_f).to eq 4.99
+            expect(order.shipment_total.to_d).to eq 4.99
           end
         end
       end

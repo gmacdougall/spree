@@ -265,7 +265,7 @@ module Spree
             end
             it "successfully applies the promo" do
               # 3 * (22 + 2.2)
-              expect(@order.total.to_f).to eq(72.6)
+              expect(@order.total).to eq('72.6'.to_d)
               coupon = Coupon.new(@order)
               coupon.apply
               expect(coupon.success).to be_present
@@ -290,7 +290,7 @@ module Spree
             end
             it "successfully applies the promo" do
               # 3 * ((2 * 10) + 2.0)
-              expect(@order.total.to_f).to eq(66)
+              expect(@order.total.to_d).to eq(66)
               coupon = Coupon.new(@order)
               coupon.apply
               expect(coupon.success).to be_present

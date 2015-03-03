@@ -271,7 +271,7 @@ module Spree
       }
 
       expect(response.status).to eq 201
-      expect(Order.last.line_items.first.price.to_f).to eq(variant.price)
+      expect(Order.last.line_items.first.price).to eq(variant.price)
     end
 
     context "admin user imports order" do
@@ -380,8 +380,8 @@ module Spree
 
         expect(response.status).to eq(200)
         expect(json_response['line_items'].count).to eq(1)
-        expect(json_response['line_items'].first['price'].to_f).to_not eq(0)
-        expect(json_response['line_items'].first['price'].to_f).to eq(line_item.variant.price)
+        expect(json_response['line_items'].first['price']).to_not eq(0)
+        expect(json_response['line_items'].first['price']).to eq(line_item.variant.price.to_s)
       end
 
       it "can add billing address" do
@@ -672,7 +672,7 @@ module Spree
             line_items: [{ price: 33.0, variant_id: variant.to_param, quantity: 5 }]
           }
           expect(response.status).to eq 201
-          expect(Order.last.line_items.first.price.to_f).to eq(33.0)
+          expect(Order.last.line_items.first.price).to eq(33.0)
         end
 
         it "can set the user_id for the order" do

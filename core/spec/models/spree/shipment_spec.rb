@@ -538,7 +538,7 @@ describe Spree::Shipment, :type => :model do
 
           expect(payment.amount).to eq payment.uncaptured_amount
           @shipment.ship!
-          expect(payment.reload.uncaptured_amount.to_f).to eq 0
+          expect(payment.reload.uncaptured_amount.to_d).to eq 0
         end
 
         it "can partially capture an authorized payment" do
@@ -607,9 +607,9 @@ describe Spree::Shipment, :type => :model do
     end
 
     it "updates everything around order shipment total and state" do
-      expect(shipment.cost.to_f).to eq 10
+      expect(shipment.cost.to_d).to eq 10
       expect(shipment.state).to eq 'pending'
-      expect(shipment.order.total.to_f).to eq 110
+      expect(shipment.order.total.to_d).to eq 110
       expect(shipment.order.payment_state).to eq 'balance_due'
     end
   end
